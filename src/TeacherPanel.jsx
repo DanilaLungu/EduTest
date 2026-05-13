@@ -1,3 +1,4 @@
+import TeacherResults from './TeacherResults';
 import React, { useState } from 'react';
 import { db, auth } from './App';
 import { collection, addDoc } from 'firebase/firestore';
@@ -97,6 +98,8 @@ export default function TeacherPanel() {
       <button onClick={saveTestToFirebase} style={{ background: 'green', color: 'white', padding: '12px 24px', fontSize: '16px', cursor: 'pointer', border: 'none', borderRadius: '5px', marginTop: '20px' }}>
         Опубликовать тест
       </button>
+            <hr style={{ margin: '40px 0' }} />
+      <TeacherResults />
     </div>
   );
 }
