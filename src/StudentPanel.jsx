@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from './App';
-import { collection, getDocs, addDoc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, query, where, orderBy } from 'firebase/firestore';
 
 export default function StudentPanel({ userId }) {
   const [tests, setTests] = useState([]);
@@ -8,21 +8,38 @@ export default function StudentPanel({ userId }) {
   const [questions, setQuestions] = useState([]);
   const [studentAnswers, setStudentAnswers] = useState({});
   const [result, setResult] = useState(null);
+  const [myAttempts, setMyAttempts] = useState([]);
 
-  // Загрузка доступных тестов
+  // Загрузка доступных тестов и личной истории попыток студента
+  const loadData = async () => {
+    // 1. Загружаем все тесты
+    const testsSnapshot = await getDocs(collection(db, "tests"));
+    setTests(testsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+
+    // 2. Загружаем только попытки текущего студента (фильтрация на стороне БД)
+    try {
+      const q = query(
+        collection(db, "attempts"), 
+        where("userId", "==", userId)
+      );
+      const attemptsSnapshot = await getDocs(q);
+      // Сортируем на клиенте, чтобы не требовать создания сложного индекса в Firebase на этапе отладки
+      const list = attemptsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      list.sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
+      setMyAttempts(list);
+    } catch (e) {
+      console.error("Ошибка загрузки истории:", e);
+    }
+  };
+
   useEffect(() => {
-    const fetchTests = async () => {
-      const querySnapshot = await getDocs(collection(db, "tests"));
-      setTests(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    };
-    fetchTests();
-  }, [result]);
+    loadData();
+  }, [result, userId]);
 
   const startTest = async (test) => {
     setActiveTest(test);
     setResult(null);
     setStudentAnswers({});
-    // Загружаем вопросы из подколлекции выбранного теста
     const qSnapshot = await getDocs(collection(db, "tests", test.id, "questions"));
     setQuestions(qSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
   };
@@ -56,7 +73,6 @@ export default function StudentPanel({ userId }) {
       completedAt: new Date().toISOString()
     };
 
-    // Сохраняем результат в БД
     await addDoc(collection(db, "attempts"), attemptData);
     setResult(attemptData);
     setActiveTest(null);
@@ -75,18 +91,38 @@ export default function StudentPanel({ userId }) {
       )}
 
       {!activeTest ? (
-        <div>
-          <h3>Доступные тесты для прохождения:</h3>
-          {tests.length === 0 ? <p>Тестов пока нет.</p> : (
-            <ul>
-              {tests.map(test => (
-                <li key={test.id} style={{ marginBottom: '10px' }}>
-                  <b>{test.title}</b> — {test.description} {' '}
-                  <button onClick={() => startTest(test)} style={{ marginLeft: '10px' }}>Пройти тест</button>
-                </li>
-              ))}
-            </ul>
-          )}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+          {/* Левая колонка: Доступные тесты */}
+          <div>
+            <h3>Доступные тесты:</h3>
+            {tests.length === 0 ? <p>Тестов пока нет.</p> : (
+              <ul style={{ paddingLeft: '20px' }}>
+                {tests.map(test => (
+                  <li key={test.id} style={{ marginBottom: '15px' }}>
+                    <div><b>{test.title}</b></div>
+                    <div style={{ fontSize: '14px', color: '#666' }}>{test.description}</div>
+                    <button onClick={() => startTest(test)} style={{ marginTop: '5px', padding: '5px 10px', cursor: 'pointer' }}>Пройти тест</button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Правая колонка: История прохождения студента */}
+          <div style={{ background: '#f1f3f5', padding: '15px', borderRadius: '6px' }}>
+            <h3>Мои результаты (История):</h3>
+            {myAttempts.length === 0 ? <p>Вы еще не проходили тесты.</p> : (
+              <ul style={{ listStyleType: 'none', padding: 0 }}>
+                {myAttempts.map(att => (
+                  <li key={att.id} style={{ background: '#fff', padding: '10px', marginBottom: '8px', borderRadius: '4px', borderLeft: `5px solid ${att.percent >= 50 ? 'green' : 'red'}` }}>
+                    <b>{att.testTitle}</b> <br />
+                    <span>Результат: {att.score}/{att.totalQuestions} ({att.percent}%)</span> <br />
+                    <span style={{ fontSize: '11px', color: '#888' }}>{new Date(att.completedAt).toLocaleString('ru-RU')}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       ) : (
         <div style={{ background: '#fff', border: '1px solid #ccc', padding: '20px', borderRadius: '5px' }}>
