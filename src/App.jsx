@@ -7,12 +7,13 @@ import StudentPanel from './StudentPanel';
 import AdminPanel from './AdminPanel';
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyA3zHso5Nl8YbhpOjap_nENBdNslcSbCq4",
+  authDomain: "edutest-ff8b8.firebaseapp.com",
+  projectId: "edutest-ff8b8",
+  storageBucket: "edutest-ff8b8.firebasestorage.app",
+  messagingSenderId: "976394305657",
+  appId: "1:976394305657:web:f61b764ea90feed35894a8",
+  measurementId: "G-CPQ3QB126F"
 };
 
 const app = initializeApp(firebaseConfig);
