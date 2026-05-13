@@ -120,6 +120,3 @@ function App() {
 }
 
 export default App
-/*
-asjbfajsfbasjfb
-*/
