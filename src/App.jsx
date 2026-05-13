@@ -27,18 +27,34 @@ export default function App() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  // Функция для безопасного получения роли
+  const fetchUserRole = async (uid) => {
+    try {
+      const userDoc = await getDoc(doc(db, "users", uid));
+      if (userDoc.exists()) {
+        setRole(userDoc.data().role);
+      } else {
+        // Если документа еще нет (момент регистрации), временно ставим student
+        setRole("student");
+      }
+    } catch (e) {
+      console.error("Ошибка чтения роли:", e);
+      setRole("student"); // Фоллбек для безопасности
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
-        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-        if (userDoc.exists()) {
-          setRole(userDoc.data().role);
-        }
+        fetchUserRole(currentUser.uid);
       } else {
         setUser(null);
         setRole(null);
+        setLoading(false);
       }
     });
     return () => unsubscribe();
@@ -46,30 +62,39 @@ export default function App() {
 
   const handleAuth = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
       if (isRegister) {
-        // 1. Создание пользователя в Firebase Auth
+        // 1. Создаем аккаунт в Auth
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const uid = userCredential.user.uid;
         
-        // 2. Запись в Firestore СТРОГО с ролью student по умолчанию
+        // 2. Сразу создаем документ в Firestore
         await setDoc(doc(db, "users", uid), {
-          name: name || "Новый пользователь", // Защита от пустого имени
+          name: name || "Новый пользователь",
           email: email,
-          role: "student" // Строго в нижнем регистре
+          role: "student"
         });
-        alert("Регистрация успешна! Роль по умолчанию: Ученик");
+        
+        setRole("student");
+        alert("Регистрация успешна!");
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
     } catch (err) {
       alert(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
+  if (loading) {
+    return <div style={{ padding: '20px', textAlign: 'center' }}>Загрузка приложения...</div>;
+  }
+
   if (!user) {
     return (
-      <div style={{ padding: '20px', maxWidth: '400px', margin: '5px auto', background: '#f9f9f9', borderRadius: '8px', boxShadow: '0 0 10px rgba(0,0,0,0.1)' }}>
+      <div style={{ padding: '20px', maxWidth: '400px', margin: '50px auto', background: '#f9f9f9', borderRadius: '8px', boxShadow: '0 0 10px rgba(0,0,0,0.1)' }}>
         <h2>{isRegister ? "Регистрация в EduTest" : "Авторизация в EduTest"}</h2>
         <form onSubmit={handleAuth}>
           {isRegister && (
@@ -91,7 +116,7 @@ export default function App() {
   return (
     <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #333', paddingBottom: '10px', background: '#f1f1f1', padding: '10px', borderRadius: '4px' }}>
-        <span>Вы вошли как: <b>{user.email}</b> | Роль в системе: <span style={{ color: 'red', fontWeight: 'bold' }}>{role}</span></span>
+        <span>Вы вошли как: <b>{user.email}</b> | Роль в системе: <span style={{ color: 'blue', fontWeight: 'bold' }}>{role?.toUpperCase()}</span></span>
         <button onClick={() => signOut(auth)} style={{ background: '#dc3545', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}>Выйти</button>
       </header>
       
