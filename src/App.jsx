@@ -135,10 +135,74 @@ if (!user) {
 
   return (
     <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #333', paddingBottom: '10px', background: '#f1f1f1', padding: '10px', borderRadius: '4px', color: '#000' }}>
-        <span>Вы вошли как: <b>{user.email}</b> | Роль в системе: <span style={{ color: 'blue', fontWeight: 'bold' }}>{role?.toUpperCase()}</span></span>
-        <button onClick={() => signOut(auth)} style={{ background: '#dc3545', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}>Выйти</button>
-      </header>
+<header style={{ 
+  display: 'flex', 
+  justifyContent: 'space-between', 
+  alignItems: 'center', 
+  background: 'var(--bg-card)', 
+  padding: '16px 24px', 
+  borderRadius: '18px', 
+  marginBottom: '30px', 
+  boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+  border: '1px solid rgba(255,255,255,0.03)'
+}}>
+  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+    {/* Аватар пользователя в стиле Discord */}
+    <div style={{ 
+      width: '40px', 
+      height: '40px', 
+      borderRadius: '50%', 
+      background: 'var(--bg-input)', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      fontSize: '18px',
+      border: `2px solid ${role === 'admin' ? 'var(--accent-red)' : role === 'teacher' ? 'var(--accent-purple)' : 'var(--accent-blue)'}`
+    }}>
+      {role === 'admin' ? '👑' : role === 'teacher' ? '👨‍🏫' : '👨‍🎓'}
+    </div>
+    
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+      <span style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)' }}>
+        {user.email}
+      </span>
+      <span style={{ 
+        fontSize: '11px', 
+        fontWeight: '700', 
+        letterSpacing: '0.5px',
+        color: role === 'admin' ? 'var(--accent-red)' : role === 'teacher' ? 'var(--accent-purple)' : 'var(--accent-blue)'
+      }}>
+        {role?.toUpperCase()}
+      </span>
+    </div>
+  </div>
+
+  <button onClick={() => signOut(auth)} style={{ 
+    background: 'rgba(218, 55, 60, 0.1)', 
+    color: 'var(--accent-red)', 
+    border: '1px solid rgba(218, 55, 60, 0.2)', 
+    padding: '10px 18px', 
+    borderRadius: '12px', 
+    fontSize: '13px', 
+    fontWeight: '600', 
+    cursor: 'pointer', 
+    transition: 'all 0.2s ease',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px'
+  }}
+  onMouseEnter={(e) => {
+    e.target.style.background = 'var(--accent-red)';
+    e.target.style.color = '#fff';
+  }}
+  onMouseLeave={(e) => {
+    e.target.style.background = 'rgba(218, 55, 60, 0.1)';
+    e.target.style.color = 'var(--accent-red)';
+  }}>
+    <span>🚪</span> Выйти
+  </button>
+</header>
+
       
       {/* Безопасный рендеринг панелей с текстовым индикатором */}
       <div style={{ marginTop: '20px' }}>
