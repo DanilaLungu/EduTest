@@ -2,45 +2,21 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    function isSignedIn() {
-      return request.auth != null;
-    }
-    
-    // Получение данных текущего пользователя
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-    }
-    
-    // Проверка, является ли пользователь админом
-    function isAdmin() {
-      return isSignedIn() && getUserData().role == 'admin';
-    }
-
-    // 1. Правила для пользователей
     match /users/{userId} {
-      // Создать профиль может любой при регистрации, если указывает роль 'student'
-      allow create: if isSignedIn() && request.resource.data.role == 'student';
-      // Читать и обновлять свой профиль может сам пользователь. Админ может всё.
-      allow read, update: if (isSignedIn() && request.auth.uid == userId) || isAdmin();
-      // Удалять пользователей может только админ
-      allow delete: if isAdmin();
+      // Разрешает любую запись и чтение для авторизованных пользователей на этапе отладки
+      allow read, write: if request.auth != null;
     }
 
-    // 2. Правила для тестов
     match /tests/{testId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin() || (isSignedIn() && getUserData().role == 'teacher');
-      
+      allow read, write: if request.auth != null;
       match /questions/{questionId} {
-        allow read: if isSignedIn();
-        allow write: if isAdmin() || (isSignedIn() && getUserData().role == 'teacher');
+        allow read, write: if request.auth != null;
       }
     }
 
-    // 3. Правила для результатов
     match /attempts/{attemptId} {
-      allow create: if isSignedIn();
-      allow read: if isAdmin() || (isSignedIn() && (request.auth.uid == resource.data.userId || getUserData().role == 'teacher'));
+      allow read, write: if request.auth != null;
     }
   }
 }
+

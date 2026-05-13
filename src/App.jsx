@@ -54,9 +54,9 @@ export default function App() {
         
         // 2. Запись в Firestore СТРОГО с ролью student по умолчанию
         await setDoc(doc(db, "users", uid), {
-          name: name || "Новый пользователь",
+          name: name || "Новый пользователь", // Защита от пустого имени
           email: email,
-          role: "student" 
+          role: "student" // Строго в нижнем регистре
         });
         alert("Регистрация успешна! Роль по умолчанию: Ученик");
       } else {
