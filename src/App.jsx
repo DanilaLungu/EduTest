@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 import TeacherPanel from './TeacherPanel';
 import StudentPanel from './StudentPanel';
+import AdminPanel from './AdminPanel';
 
-// Инициализация Firebase (конфиг берется из вашего src/firebase.js)
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
   authDomain: "YOUR_firebaseapp.com",
@@ -22,14 +22,15 @@ export const db = getFirestore(app);
 export default function App() {
   const [user, setUser] = useState(null);
   const [role, setRole] = useState(null);
+  const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
-        // Получаем роль пользователя из коллекции users
         const userDoc = await getDoc(doc(db, "users", currentUser.uid));
         if (userDoc.exists()) {
           setRole(userDoc.data().role);
@@ -42,31 +43,58 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  const handleLogin = (e) => {
+  const handleAuth = async (e) => {
     e.preventDefault();
-    signInWithEmailAndPassword(auth, email, password).catch(err => alert(err.message));
+    try {
+      if (isRegister) {
+        // 1. Создание пользователя в Firebase Auth
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const uid = userCredential.user.uid;
+        
+        // 2. Запись в Firestore СТРОГО с ролью student по умолчанию
+        await setDoc(doc(db, "users", uid), {
+          name: name || "Новый пользователь",
+          email: email,
+          role: "student" 
+        });
+        alert("Регистрация успешна! Роль по умолчанию: Ученик");
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+      }
+    } catch (err) {
+      alert(err.message);
+    }
   };
 
   if (!user) {
     return (
-      <div style={{ padding: '20px', maxWidth: '400px', margin: '0 auto' }}>
-        <h2>Авторизация в EduTest</h2>
-        <form onSubmit={handleLogin}>
+      <div style={{ padding: '20px', maxWidth: '400px', margin: '5px auto', background: '#f9f9f9', borderRadius: '8px', boxShadow: '0 0 10px rgba(0,0,0,0.1)' }}>
+        <h2>{isRegister ? "Регистрация в EduTest" : "Авторизация в EduTest"}</h2>
+        <form onSubmit={handleAuth}>
+          {isRegister && (
+            <input type="text" placeholder="Ваше Имя" value={name} onChange={e => setName(e.target.value)} required style={{ display: 'block', width: '100%', marginBottom: '10px', padding: '8px' }} />
+          )}
           <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required style={{ display: 'block', width: '100%', marginBottom: '10px', padding: '8px' }} />
           <input type="password" placeholder="Пароль" value={password} onChange={e => setPassword(e.target.value)} required style={{ display: 'block', width: '100%', marginBottom: '10px', padding: '8px' }} />
-          <button type="submit" style={{ padding: '10px 20px', cursor: 'pointer' }}>Войти</button>
+          <button type="submit" style={{ padding: '10px 20px', cursor: 'pointer', background: '#007bff', color: '#fff', border: 'none', borderRadius: '4px' }}>
+            {isRegister ? "Зарегистрироваться" : "Войти"}
+          </button>
         </form>
+        <p onClick={() => setIsRegister(!isRegister)} style={{ cursor: 'pointer', color: '#007bff', marginTop: '15px', textAlign: 'center' }}>
+          {isRegister ? "Уже есть аккаунт? Войти" : "Нет аккаунта? Зарегистрироваться"}
+        </p>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '20px' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #ccc', paddingBottom: '10px' }}>
-        <span>Вы вошли как: <b>{user.email}</b> ({role === 'teacher' ? 'Преподаватель' : 'Студент'})</span>
-        <button onClick={() => signOut(auth)}>Выйти</button>
+    <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #333', paddingBottom: '10px', background: '#f1f1f1', padding: '10px', borderRadius: '4px' }}>
+        <span>Вы вошли как: <b>{user.email}</b> | Роль в системе: <span style={{ color: 'red', fontWeight: 'bold' }}>{role}</span></span>
+        <button onClick={() => signOut(auth)} style={{ background: '#dc3545', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}>Выйти</button>
       </header>
       
+      {role === 'admin' && <AdminPanel />}
       {role === 'teacher' && <TeacherPanel />}
       {role === 'student' && <StudentPanel userId={user.uid} />}
     </div>

@@ -2,36 +2,45 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Проверка, авторизован ли пользователь
     function isSignedIn() {
       return request.auth != null;
     }
     
-    // Получение роли пользователя из коллекции users
+    // Получение данных текущего пользователя
     function getUserData() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
-
-    // 1. Коллекция пользователей
-    match /users/{userId} {
-      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    
+    // Проверка, является ли пользователь админом
+    function isAdmin() {
+      return isSignedIn() && getUserData().role == 'admin';
     }
 
-    // 2. Коллекция тестов и вложенных вопросов
+    // 1. Правила для пользователей
+    match /users/{userId} {
+      // Создать профиль может любой при регистрации, если указывает роль 'student'
+      allow create: if isSignedIn() && request.resource.data.role == 'student';
+      // Читать и обновлять свой профиль может сам пользователь. Админ может всё.
+      allow read, update: if (isSignedIn() && request.auth.uid == userId) || isAdmin();
+      // Удалять пользователей может только админ
+      allow delete: if isAdmin();
+    }
+
+    // 2. Правила для тестов
     match /tests/{testId} {
       allow read: if isSignedIn();
-      allow write: if isSignedIn() && getUserData().role == 'teacher';
+      allow write: if isAdmin() || (isSignedIn() && getUserData().role == 'teacher');
       
       match /questions/{questionId} {
         allow read: if isSignedIn();
-        allow write: if isSignedIn() && getUserData().role == 'teacher';
+        allow write: if isAdmin() || (isSignedIn() && getUserData().role == 'teacher');
       }
     }
 
-    // 3. Коллекция результатов тестирования (попыток)
+    // 3. Правила для результатов
     match /attempts/{attemptId} {
       allow create: if isSignedIn();
-      allow read: if isSignedIn() && (request.auth.uid == resource.data.userId || getUserData().role == 'teacher');
+      allow read: if isAdmin() || (isSignedIn() && (request.auth.uid == resource.data.userId || getUserData().role == 'teacher'));
     }
   }
 }
