@@ -3,12 +3,12 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 
-// Безопасный импорт панелей (убедитесь, что файлы лежат в папке src/)
+// Безопасный импорт панелей 
 import AdminPanel from './AdminPanel';
 import TeacherPanel from './TeacherPanel';
 import StudentPanel from './StudentPanel';
 
-// Перенесите ваши реальные ключи из консоли Firebase сюда:
+// ключи из консоли Firebase:
 const firebaseConfig = {
   apiKey: "AIzaSyA3zHso5Nl8YbhpOjap_nENBdNslcSbCq4",
   authDomain: "edutest-ff8b8.firebaseapp.com",
@@ -94,43 +94,47 @@ export default function App() {
     return <div style={{ padding: '20px', textAlign: 'center', color: '#fff' }}>Загрузка профиля EduTest...</div>;
   }
 
-if (!user) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', padding: '20px' }}>
-      <div style={{ background: 'var(--bg-card)', padding: '40px 30px', borderRadius: '24px', width: '100%', maxWidth: '380px', boxShadow: '0 10px 30px rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
-        
-        {/* Иконка и Логотип как на 1-м экране макета */}
-        <div style={{ fontSize: '50px', marginBottom: '10px' }}>📖</div>
-        <h1 style={{ fontSize: '28px', fontWeight: '700', margin: '0 0 30px 0', letterSpacing: '-0.5px' }}>EduTest</h1>
-        
-        <form onSubmit={handleAuth} style={{ textAlign: 'left' }}>
-          {isRegister && (
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '500', display: 'block', marginBottom: '5px' }}>ИМЯ ПОЛЬЗОВАТЕЛЯ</label>
-              <input type="text" placeholder="Данила" value={name} onChange={e => setName(e.target.value)} required style={{ width: '100%', padding: '12px 16px', background: 'var(--bg-input)', border: 'none', borderRadius: '12px', color: '#fff', fontSize: '15px', boxSizing: 'border-box' }} />
-            </div>
-          )}
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '500', display: 'block', marginBottom: '5px' }}>ЭЛЕКТРОННАЯ ПОЧТА</label>
-            <input type="email" placeholder="example@mail.com" value={email} onChange={e => setEmail(e.target.value)} required style={{ width: '100%', padding: '12px 16px', background: 'var(--bg-input)', border: 'none', borderRadius: '12px', color: '#fff', fontSize: '15px', boxSizing: 'border-box' }} />
-          </div>
-          <div style={{ marginBottom: '25px' }}>
-            <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '500', display: 'block', marginBottom: '5px' }}>ПАРОЛЬ</label>
-            <input type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required style={{ width: '100%', padding: '12px 16px', background: 'var(--bg-input)', border: 'none', borderRadius: '12px', color: '#fff', fontSize: '15px', boxSizing: 'border-box' }} />
-          </div>
+  if (!user) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', padding: '20px' }}>
+        <div style={{ background: 'var(--bg-card)', padding: '40px 30px', borderRadius: '24px', width: '100%', maxWidth: '380px', boxShadow: '0 10px 30px rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
+          <div style={{ fontSize: '50px', marginBottom: '10px' }}>📖</div>
+          <h1 style={{ fontSize: '28px', fontWeight: '700', margin: '0 0 30px 0', letterSpacing: '-0.5px' }}>EduTest</h1>
           
-          <button type="submit" style={{ width: '100%', padding: '14px', background: 'var(--accent-blue)', color: '#fff', border: 'none', borderRadius: '14px', fontSize: '16px', fontWeight: '600', cursor: 'pointer', transition: 'background 0.2s' }}>
-            {isRegister ? "Создать аккаунт" : "Войти"}
-          </button>
-        </form>
-        
-        <p onClick={() => setIsRegister(!isRegister)} style={{ cursor: 'pointer', color: 'var(--accent-blue)', marginTop: '20px', fontSize: '14px', fontWeight: '500' }}>
-          {isRegister ? "Уже есть аккаунт? Войти" : "Нет аккаунта? Зарегистрироваться"}
-        </p>
+          <form onSubmit={handleAuth} style={{ textAlign: 'left' }}>
+            {isRegister && (
+              <div style={{ marginBottom: '15px' }}>
+                {/* Изменено название поля */}
+                <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '500', display: 'block', marginBottom: '5px' }}>ФИО ПОЛЬЗОВАТЕЛЯ</label>
+                <input type="text" placeholder="Иванов Иван Иванович" value={name} onChange={e => setName(e.target.value)} required style={{ width: '100%', padding: '12px 16px', background: 'var(--bg-input)', border: 'none', borderRadius: '12px', color: '#fff', fontSize: '15px', boxSizing: 'border-box' }} />
+              </div>
+            )}
+            
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '500', display: 'block', marginBottom: '5px' }}>ЭЛЕКТРОННАЯ ПОЧТА</label>
+              <input type="email" placeholder="example@mail.com" value={email} onChange={e => setEmail(e.target.value)} required style={{ width: '100%', padding: '12px 16px', background: 'var(--bg-input)', border: 'none', borderRadius: '12px', color: '#fff', fontSize: '15px', boxSizing: 'border-box' }} />
+            </div>
+            
+            <div style={{ marginBottom: '25px' }}>
+              {/* Изменено название поля */}
+              <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '500', display: 'block', marginBottom: '5px' }}>ПАРОЛЬ 1-6 ЗНАКОВ</label>
+              {/* Добавлено ограничение minLength="6" для контроля длины пароля */}
+              <input type="password" placeholder="••••••" minLength="6" value={password} onChange={e => setPassword(e.target.value)} required style={{ width: '100%', padding: '12px 16px', background: 'var(--bg-input)', border: 'none', borderRadius: '12px', color: '#fff', fontSize: '15px', boxSizing: 'border-box' }} />
+            </div>
+            
+            <button type="submit" style={{ width: '100%', padding: '14px', background: 'var(--accent-blue)', color: '#fff', border: 'none', borderRadius: '14px', fontSize: '16px', fontWeight: '600', cursor: 'pointer' }}>
+              {isRegister ? "Создать аккаунт" : "Войти"}
+            </button>
+          </form>
+          
+          <p onClick={() => setIsRegister(!isRegister)} style={{ cursor: 'pointer', color: 'var(--accent-blue)', marginTop: '20px', fontSize: '14px', fontWeight: '500' }}>
+            {isRegister ? "Уже есть аккаунт? Войти" : "Нет аккаунта? Зарегистрироваться"}
+          </p>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
+
 
 
   return (
