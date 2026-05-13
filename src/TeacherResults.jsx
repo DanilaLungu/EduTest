@@ -1,27 +1,63 @@
 import React, { useState, useEffect } from 'react';
 import { db } from './App';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, query, orderBy } from 'firebase/firestore';
 
 export default function TeacherResults() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchResults = async () => {
+    const fetchResultsWithNames = async () => {
       try {
+        // 1. Получаем все попытки, отсортированные по дате
         const q = query(collection(db, "attempts"), orderBy("completedAt", "desc"));
         const querySnapshot = await getDocs(q);
-        setResults(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        const attemptsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // Кэш для имен, чтобы не запрашивать одного и того же пользователя дважды
+        const namesCache = {};
+
+        // 2. Для каждой попытки ищем ФИО студента в коллекции users
+        const enrichedResults = await Promise.all(
+          attemptsData.map(async (attempt) => {
+            let studentName = "Неизвестный студент";
+
+            if (attempt.userId) {
+              // Если имя этого пользователя уже искали, берем из кэша
+              if (namesCache[attempt.userId]) {
+                studentName = namesCache[attempt.userId];
+              } else {
+                try {
+                  const userDoc = await getDoc(doc(db, "users", attempt.userId));
+                  if (userDoc.exists() && userDoc.data().name) {
+                    studentName = userDoc.data().name;
+                    namesCache[attempt.userId] = studentName; // Сохраняем в кэш
+                  }
+                } catch (e) {
+                  console.error("Ошибка получения имени для ID:", attempt.userId, e);
+                }
+              }
+            }
+
+            return {
+              ...attempt,
+              studentName // Добавляем новое поле с ФИО
+            };
+          })
+        );
+
+        setResults(enrichedResults);
       } catch (error) {
         console.error("Ошибка загрузки результатов:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchResults();
+
+    fetchResultsWithNames();
   }, []);
 
-  if (loading) return <div style={{ padding: '20px', color: 'var(--text-secondary)' }}>Загрузка таблицы результатов...</div>;
+  if (loading) return <div style={{ padding: '20px', color: 'var(--text-secondary)' }}>Загрузка таблицы успеваемости...</div>;
 
   return (
     <div style={{ 
@@ -42,7 +78,7 @@ export default function TeacherResults() {
             <thead>
               <tr style={{ borderBottom: '2px solid var(--bg-input)', textAlign: 'left' }}>
                 <th style={{ padding: '12px 16px', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600' }}>ТЕСТ</th>
-                <th style={{ padding: '12px 16px', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600' }}>ID СТУДЕНТА</th>
+                <th style={{ padding: '12px 16px', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600' }}>ФИО СТУДЕНТА</th>
                 <th style={{ padding: '12px 16px', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600' }}>БАЛЛЫ</th>
                 <th style={{ padding: '12px 16px', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600' }}>ПРОЦЕНТ</th>
                 <th style={{ padding: '12px 16px', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600', textAlign: 'right' }}>ДАТА</th>
@@ -52,7 +88,8 @@ export default function TeacherResults() {
               {results.map(res => (
                 <tr key={res.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
                   <td style={{ padding: '16px', fontSize: '15px', fontWeight: '500' }}>{res.testTitle}</td>
-                  <td style={{ padding: '16px', fontSize: '13px', color: 'var(--text-secondary)' }}>{res.userId.substring(0, 8)}...</td>
+                  {/* Выводим ФИО вместо хэш-кода */}
+                  <td style={{ padding: '16px', fontSize: '14px', color: 'var(--text-primary)', fontWeight: '500' }}>{res.studentName}</td>
                   <td style={{ padding: '16px', fontSize: '14px' }}>{res.score} / {res.totalQuestions}</td>
                   <td style={{ padding: '16px' }}>
                     <span style={{ 
