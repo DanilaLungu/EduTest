@@ -2,10 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
+
+// Безопасный импорт панелей (убедитесь, что файлы лежат в папке src/)
+import AdminPanel from './AdminPanel';
 import TeacherPanel from './TeacherPanel';
 import StudentPanel from './StudentPanel';
-import AdminPanel from './AdminPanel';
 
+// Перенесите ваши реальные ключи из консоли Firebase сюда:
 const firebaseConfig = {
   apiKey: "AIzaSyA3zHso5Nl8YbhpOjap_nENBdNslcSbCq4",
   authDomain: "edutest-ff8b8.firebaseapp.com",
@@ -29,21 +32,22 @@ export default function App() {
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // Функция для безопасного получения роли
   const fetchUserRole = async (uid) => {
     try {
       const userDoc = await getDoc(doc(db, "users", uid));
       if (userDoc.exists()) {
-        setRole(userDoc.data().role);
+        const userRole = userDoc.data().role;
+        // Приводим к нижнему регистру для исключения ошибок синтаксиса
+        setRole(userRole ? userRole.toLowerCase() : "student");
       } else {
-        // Если документа еще нет (момент регистрации), временно ставим student
         setRole("student");
       }
     } catch (e) {
-      console.error("Ошибка чтения роли:", e);
-      setRole("student"); // Фоллбек для безопасности
+      console.error("Ошибка при получении роли:", e);
+      setRole("student"); 
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -65,11 +69,9 @@ export default function App() {
     setLoading(true);
     try {
       if (isRegister) {
-        // 1. Создаем аккаунт в Auth
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const uid = userCredential.user.uid;
         
-        // 2. Сразу создаем документ в Firestore
         await setDoc(doc(db, "users", uid), {
           name: name || "Новый пользователь",
           email: email,
@@ -89,12 +91,12 @@ export default function App() {
   };
 
   if (loading) {
-    return <div style={{ padding: '20px', textAlign: 'center' }}>Загрузка приложения...</div>;
+    return <div style={{ padding: '20px', textAlign: 'center', color: '#fff' }}>Загрузка профиля EduTest...</div>;
   }
 
   if (!user) {
     return (
-      <div style={{ padding: '20px', maxWidth: '400px', margin: '50px auto', background: '#f9f9f9', borderRadius: '8px', boxShadow: '0 0 10px rgba(0,0,0,0.1)' }}>
+      <div style={{ padding: '20px', maxWidth: '400px', margin: '50px auto', background: '#f9f9f9', borderRadius: '8px', boxShadow: '0 0 10px rgba(0,0,0,0.1)', color: '#000' }}>
         <h2>{isRegister ? "Регистрация в EduTest" : "Авторизация в EduTest"}</h2>
         <form onSubmit={handleAuth}>
           {isRegister && (
@@ -115,14 +117,25 @@ export default function App() {
 
   return (
     <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #333', paddingBottom: '10px', background: '#f1f1f1', padding: '10px', borderRadius: '4px' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #333', paddingBottom: '10px', background: '#f1f1f1', padding: '10px', borderRadius: '4px', color: '#000' }}>
         <span>Вы вошли как: <b>{user.email}</b> | Роль в системе: <span style={{ color: 'blue', fontWeight: 'bold' }}>{role?.toUpperCase()}</span></span>
         <button onClick={() => signOut(auth)} style={{ background: '#dc3545', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}>Выйти</button>
       </header>
       
-      {role === 'admin' && <AdminPanel />}
-      {role === 'teacher' && <TeacherPanel />}
-      {role === 'student' && <StudentPanel userId={user.uid} />}
+      {/* Безопасный рендеринг панелей с текстовым индикатором */}
+      <div style={{ marginTop: '20px' }}>
+        {role === 'admin' && <AdminPanel />}
+        {role === 'teacher' && <TeacherPanel />}
+        {role === 'student' && <StudentPanel userId={user.uid} />}
+        
+        {/* Предохранитель на случай, если роль пустая или указана неверно */}
+        {!['admin', 'teacher', 'student'].includes(role) && (
+          <div style={{ color: '#fff' }}>
+            <p>Ваша роль в базе данных ("{role}") не распознана приложением.</p>
+            <p>Доступные роли: admin, teacher, student.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
