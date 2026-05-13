@@ -117,7 +117,7 @@ export default function App() {
             
             <div style={{ marginBottom: '25px' }}>
               {/* Изменено название поля */}
-              <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '500', display: 'block', marginBottom: '5px' }}>ПАРОЛЬ 1-6 ЗНАКОВ</label>
+              <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '500', display: 'block', marginBottom: '5px' }}>ПАРОЛЬ </label>
               {/* Добавлено ограничение minLength="6" для контроля длины пароля */}
               <input type="password" placeholder="••••••" minLength="6" value={password} onChange={e => setPassword(e.target.value)} required style={{ width: '100%', padding: '12px 16px', background: 'var(--bg-input)', border: 'none', borderRadius: '12px', color: '#fff', fontSize: '15px', boxSizing: 'border-box' }} />
             </div>
