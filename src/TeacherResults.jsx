@@ -9,7 +9,6 @@ export default function TeacherResults() {
   useEffect(() => {
     const fetchResults = async () => {
       try {
-        // Запрос на получение всех попыток, отсортированных по дате (свежие сверху)
         const q = query(collection(db, "attempts"), orderBy("completedAt", "desc"));
         const querySnapshot = await getDocs(q);
         setResults(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
@@ -22,38 +21,59 @@ export default function TeacherResults() {
     fetchResults();
   }, []);
 
-  if (loading) return <div>Загрузка таблицы результатов...</div>;
+  if (loading) return <div style={{ padding: '20px', color: 'var(--text-secondary)' }}>Загрузка таблицы результатов...</div>;
 
   return (
-    <div style={{ marginTop: '20px', background: '#f8f9fa', padding: '15px', borderRadius: '5px', border: '1px solid #dee2e6' }}>
-      <h3>📊 Журнал успеваемости студентов</h3>
-      {results.length === 0 ? <p>Ни один студент еще не прошел тесты.</p> : (
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px', background: '#fff' }}>
-          <thead>
-            <tr style={{ background: '#e9ecef', textAlign: 'left' }}>
-              <th style={{ padding: '8px', border: '1px solid #dee2e6' }}>Тест</th>
-              <th style={{ padding: '8px', border: '1px solid #dee2e6' }}>ID Студента</th>
-              <th style={{ padding: '8px', border: '1px solid #dee2e6' }}>Баллы</th>
-              <th style={{ padding: '8px', border: '1px solid #dee2e6' }}>Процент</th>
-              <th style={{ padding: '8px', border: '1px solid #dee2e6' }}>Дата прохождения</th>
-            </tr>
-          </thead>
-          <tbody>
-            {results.map(res => (
-              <tr key={res.id}>
-                <td style={{ padding: '8px', border: '1px solid #dee2e6' }}>{res.testTitle}</td>
-                <td style={{ padding: '8px', border: '1px solid #dee2e6', fontSize: '12px', color: '#555' }}>{res.userId}</td>
-                <td style={{ padding: '8px', border: '1px solid #dee2e6' }}>{res.score} / {res.totalQuestions}</td>
-                <td style={{ padding: '8px', border: '1px solid #dee2e6', fontWeight: 'bold', color: res.percent >= 50 ? 'green' : 'red' }}>
-                  {res.percent}%
-                </td>
-                <td style={{ padding: '8px', border: '1px solid #dee2e6', fontSize: '13px' }}>
-                  {new Date(res.completedAt).toLocaleString('ru-RU')}
-                </td>
+    <div style={{ 
+      background: 'var(--bg-card)', 
+      padding: '30px', 
+      borderRadius: '24px', 
+      boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+      border: '1px solid rgba(255,255,255,0.03)',
+      color: 'var(--text-primary)'
+    }}>
+      <h2 style={{ fontSize: '20px', margin: '0 0 20px 0', fontWeight: '600' }}>📊 Журнал успеваемости студентов</h2>
+      
+      {results.length === 0 ? (
+        <p style={{ color: 'var(--text-secondary)' }}>Ни один студент еще не проходил тесты.</p>
+      ) : (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: '2px solid var(--bg-input)', textAlign: 'left' }}>
+                <th style={{ padding: '12px 16px', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600' }}>ТЕСТ</th>
+                <th style={{ padding: '12px 16px', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600' }}>ID СТУДЕНТА</th>
+                <th style={{ padding: '12px 16px', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600' }}>БАЛЛЫ</th>
+                <th style={{ padding: '12px 16px', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600' }}>ПРОЦЕНТ</th>
+                <th style={{ padding: '12px 16px', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600', textAlign: 'right' }}>ДАТА</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {results.map(res => (
+                <tr key={res.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
+                  <td style={{ padding: '16px', fontSize: '15px', fontWeight: '500' }}>{res.testTitle}</td>
+                  <td style={{ padding: '16px', fontSize: '13px', color: 'var(--text-secondary)' }}>{res.userId.substring(0, 8)}...</td>
+                  <td style={{ padding: '16px', fontSize: '14px' }}>{res.score} / {res.totalQuestions}</td>
+                  <td style={{ padding: '16px' }}>
+                    <span style={{ 
+                      fontSize: '12px', 
+                      fontWeight: '700', 
+                      padding: '4px 10px', 
+                      borderRadius: '8px',
+                      background: res.percent >= 50 ? 'rgba(35, 165, 90, 0.1)' : 'rgba(218, 55, 60, 0.1)',
+                      color: res.percent >= 50 ? 'var(--accent-green)' : 'var(--accent-red)'
+                    }}>
+                      {res.percent}%
+                    </span>
+                  </td>
+                  <td style={{ padding: '16px', fontSize: '13px', color: 'var(--text-secondary)', textAlign: 'right' }}>
+                    {new Date(res.completedAt).toLocaleDateString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
